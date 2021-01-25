@@ -1,13 +1,14 @@
 plugins {
     id 'java'
     id 'io.spring.dependency-management' version "1.0.10.RELEASE"
-    id 'org.springframework.boot' version '2.4.2'
+    id 'org.springframework.boot' version '2.3.4.RELEASE'
     id 'pl.allegro.tech.build.axion-release' version '1.12.0'
+    id 'com.palantir.docker' version '0.25.0'
+    id 'com.palantir.docker-run' version '0.25.0'
+    id 'jp.classmethod.aws.cloudformation' version '0.41'
 }
 
-group 'theme-park-rides'
-version '1.0-SNAPSHOT'
-
+version = scmVersion.version
 sourceCompatibility = 11
 
 repositories {
@@ -27,11 +28,23 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testCompileOnly 'junit:junit:4.12'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.3.1'
 }
 
 test {
     useJUnitPlatform()
 }
-project.version = scmVersion.version
+
+String imageName = "gorinych/theme-park-rides:$version"
+
+docker {
+    name imageName
+    files "build/libs/${bootJar.archiveFileName.get()}"
+    buildArgs([JAR_FILE: bootJar.archiveFileName.get()])
+}
+
+dockerRun {
+    name project.name
+    image imageName
+    ports '8080:8080'
+    clean true
+}
