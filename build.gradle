@@ -48,3 +48,20 @@ dockerRun {
     ports '8080:8080'
     clean true
 }
+
+aws {
+    region = findProperty('region') ?: 'us-east-2'
+}
+
+String dockerHubUsernameProperty = findProperty('dockerHubUsername') ?: 'gorinych'
+
+cloudFormation {
+    stackName "$project.name-stack"
+    stackParams([
+            SubnetID: findProperty('subnetId') ?: '',
+            ServiceName: project.name,
+            ServiceVersion: project.version,
+            DockerHubUsername: dockerHubUsernameProperty
+    ])
+    templateFile project.file("ecs.yml")
+}
