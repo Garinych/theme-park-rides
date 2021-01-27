@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     triggers {
         pollSCM '* * * * *'
     }
@@ -14,14 +15,18 @@ pipeline {
                 sh './gradlew test'
             }
         }
-        stage('Deploy to AWS') {
+        stage('Build Docker image') {
+            steps {
+                sh './gradlew docker'
+            }
+        }
+        stage('Push Docker image') {
             environment {
                 DOCKER_HUB_LOGIN = credentials('docker-hub')
             }
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh './gradlew awsCfnMigrateStack awsCfnWaitStackComplete -PsubnetId=$SUBNET_ID -PdockerHubUsername=$DOCKER_HUB_LOGIN_USR -Pregion=$AWS_REGION'
-                }
+                sh 'docker login --username=$DOCKER_HUB_LOGIN_USR --password=$DOCKER_HUB_LOGIN_PSW'
+                sh './gradlew dockerPush'
             }
         }
     }
